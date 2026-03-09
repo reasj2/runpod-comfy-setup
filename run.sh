@@ -28,6 +28,7 @@ NODES=(
     "https://github.com/crystian/CRT-Nodes.git"
     "https://github.com/evanspearman/ComfyMath.git"
     "https://github.com/teskor-hub/comfyui-teskors-utils.git"
+    "https://github.com/PGCRT/CRT-Nodes.git"
 )
 
 CLIP_MODELS=(
