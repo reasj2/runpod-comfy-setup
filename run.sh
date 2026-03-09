@@ -194,13 +194,11 @@ function provisioning_make_aliases() {
     ln -sf "${COMFYUI_DIR}/models/loras/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors" \
           "${COMFYUI_DIR}/models/loras/WanPusa.safetensors" || true
 
-    ln -sf "${COMFYUI_DIR}/models/controlnet/wan21_u3c_controlnet_fp16.safetensors" \
-          "${COMFYUI_DIR}/models/controlnet/Wan21_Uni3C_controlnet_fp16.safetensors" || true
+    if [[ -f "${COMFYUI_DIR}/models/controlnet/wan21_u3c_controlnet_fp16.safetensors" ]]; then
+        cp -f "${COMFYUI_DIR}/models/controlnet/wan21_u3c_controlnet_fp16.safetensors" \
+              "${COMFYUI_DIR}/models/controlnet/Wan21_Uni3C_controlnet_fp16.safetensors"
+    fi
 }
-
-if [[ ! -f /.noprovisioning ]]; then
-    provisioning_start
-fi
 
 echo "Script done!"
 cd "${COMFYUI_DIR}"
