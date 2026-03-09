@@ -5,12 +5,15 @@ source /venv/main/bin/activate
 
 WORKSPACE="${WORKSPACE:-/workspace}"
 COMFYUI_DIR="${WORKSPACE}/ComfyUI"
+PERSONAL_NODES_REPO="https://github.com/reasj2/comfyui-animator-nodes.git"
+PERSONAL_TMP_DIR="/tmp/reasj2-comfyui-animator-nodes"
 
 echo "Start provisioning..."
 
 APT_PACKAGES=()
 PIP_PACKAGES=()
 
+# These are repo-based nodes installed normally
 NODES=(
     "https://github.com/kijai/ComfyUI-WanVideoWrapper"
     "https://github.com/chflame163/ComfyUI_LayerStyle"
@@ -27,7 +30,6 @@ NODES=(
     "https://github.com/plugcrypt/CRT-Nodes.git"
     "https://github.com/evanspearman/ComfyMath.git"
     "https://github.com/teskor-hub/comfyui-teskors-utils.git"
-    "https://github.com/reasj2/comfyui-animator-nodes.git"
 )
 
 CLIP_VISION_MODELS=(
@@ -80,6 +82,8 @@ provisioning_start() {
     provisioning_clone_comfyui
     provisioning_install_base_reqs
     provisioning_get_nodes
+    provisioning_get_personal_nodes
+    provisioning_install_all_node_requirements
     provisioning_get_pip_packages
 
     provisioning_get_files "${COMFYUI_DIR}/models/clip_vision"      "${CLIP_VISION_MODELS[@]}"
@@ -144,7 +148,7 @@ provisioning_get_nodes() {
     cd "${COMFYUI_DIR}/custom_nodes" || exit 1
 
     for repo in "${NODES[@]}"; do
-        local dir path requirements
+        local dir path
         dir="${repo##*/}"
         dir="${dir%.git}"
         path="${COMFYUI_DIR}/custom_nodes/${dir}"
@@ -167,12 +171,59 @@ provisioning_get_nodes() {
                 continue
             }
         fi
+    done
+}
 
-        requirements="${path}/requirements.txt"
-        if [[ -f "${requirements}" ]]; then
-            log "Installing deps for ${dir}..."
-            pip install --no-cache-dir -r "${requirements}" || warn "pip requirements failed for ${dir}"
-        fi
+provisioning_get_personal_nodes() {
+    log "Installing nodes from your GitHub repo..."
+
+    rm -rf "${PERSONAL_TMP_DIR}"
+    git clone --depth 1 "${PERSONAL_NODES_REPO}" "${PERSONAL_TMP_DIR}" || {
+        warn "Failed to clone personal nodes repo"
+        return 0
+    }
+
+    mkdir -p "${COMFYUI_DIR}/custom_nodes"
+
+    # Copy every top-level directory from your repo into custom_nodes,
+    # skipping repo metadata and junk folders.
+    find "${PERSONAL_TMP_DIR}" -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+        local name
+        name="$(basename "${dir}")"
+
+        case "${name}" in
+            .git|.github|__pycache__)
+                continue
+                ;;
+        esac
+
+        log "Copying personal node folder: ${name}"
+        rm -rf "${COMFYUI_DIR}/custom_nodes/${name}"
+        cp -R "${dir}" "${COMFYUI_DIR}/custom_nodes/${name}"
+    done
+
+    # If the repo root itself is also a custom node package (your original one),
+    # copy root-level python files into its own folder.
+    if compgen -G "${PERSONAL_TMP_DIR}/*.py" > /dev/null || [[ -f "${PERSONAL_TMP_DIR}/__init__.py" ]]; then
+        local root_node_dir="${COMFYUI_DIR}/custom_nodes/reasj2-comfyui-animator-nodes"
+        mkdir -p "${root_node_dir}"
+
+        find "${PERSONAL_TMP_DIR}" -maxdepth 1 -type f \( \
+            -name "*.py" -o \
+            -name "requirements.txt" -o \
+            -name "README*" \
+        \) -exec cp {} "${root_node_dir}/" \;
+
+        log "Copied root-level personal node files into: reasj2-comfyui-animator-nodes"
+    fi
+}
+
+provisioning_install_all_node_requirements() {
+    log "Installing node requirements..."
+
+    find "${COMFYUI_DIR}/custom_nodes" -name requirements.txt -type f | while read -r req; do
+        log "Installing deps from ${req}"
+        pip install --no-cache-dir -r "${req}" || warn "Failed requirements: ${req}"
     done
 
     pip install --no-cache-dir opencv-contrib-python psutil || warn "Failed installing shared extra packages"
