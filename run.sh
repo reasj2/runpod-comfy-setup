@@ -25,6 +25,9 @@ NODES=(
     "https://github.com/hanjangma41/NEW-UTILSs.git"
     "https://github.com/reasj2/comfyui-animator-nodes.git"
     "https://github.com/kijai/ComfyUI-segment-anything-2"
+    "https://github.com/crystian/CRT-Nodes.git"
+    "https://github.com/evanspearman/ComfyMath.git"
+    "https://github.com/teskor-hub/comfyui-teskors-utils.git"
 )
 
 CLIP_MODELS=(
