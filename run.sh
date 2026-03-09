@@ -24,6 +24,7 @@ NODES=(
     "https://github.com/jnxmx/ComfyUI_HuggingFace_Downloader"
     "https://github.com/hanjangma41/NEW-UTILSs.git"
     "https://github.com/reasj2/comfyui-animator-nodes.git"
+    "https://github.com/kijai/ComfyUI-segment-anything-2"
 )
 
 CLIP_MODELS=(
