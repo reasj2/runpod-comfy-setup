@@ -143,32 +143,30 @@ function provisioning_get_nodes() {
     pip install --no-cache-dir opencv-contrib-python || true
 }
 
-function provisioning_get_files() {
-    if [[ $# -lt 2 ]]; then return; fi
-    local dir="$1"
-    shift
-    local files=("$@")
+function provisioning_get_nodes() {
+    mkdir -p "${COMFYUI_DIR}/custom_nodes"
+    cd "${COMFYUI_DIR}/custom_nodes"
 
-    mkdir -p "$dir"
-    echo "Download ${#files[@]} file(s) → $dir..."
+    for repo in "${NODES[@]}"; do
+        dir="${repo##*/}"
+        dir="${dir%.git}"
+        path="./${dir}"
 
-    for url in "${files[@]}"; do
-        echo "→ $url"
-        local auth_header=""
-        if [[ -n "$HF_TOKEN" && "$url" =~ huggingface\.co ]]; then
-            auth_header="--header=Authorization: Bearer $HF_TOKEN"
-        elif [[ -n "$CIVITAI_TOKEN" && "$url" =~ civitai\.com ]]; then
-            auth_header="--header=Authorization: Bearer $CIVITAI_TOKEN"
+        if [[ -d "$path" ]]; then
+            echo "Updating node: $dir"
+            (cd "$path" && git pull --ff-only 2>/dev/null || { git fetch && git reset --hard origin/main; })
+        else
+            echo "Cloning node: $dir"
+            git clone "$repo" "$path" --recursive
         fi
 
-        wget $auth_header -nc --content-disposition --show-progress -e dotbytes=4M -P "$dir" "$url" || echo " [!] Download failed: $url"
-        echo ""
+        requirements="${path}/requirements.txt"
+        if [[ -f "$requirements" ]]; then
+            echo "Installing deps for $dir..."
+            pip install --no-cache-dir -r "$requirements"
+        fi
     done
+
+    # install extra dependency for CRT-Nodes
+    pip install --no-cache-dir psutil
 }
-
-if [[ ! -f /.noprovisioning ]]; then
-    provisioning_start
-fi
-
-echo "Script done!"
-cd "${COMFYUI_DIR}"
