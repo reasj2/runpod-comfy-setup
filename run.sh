@@ -23,7 +23,7 @@ NODES=(
     "https://github.com/rgthree/rgthree-comfy"
     "https://github.com/jnxmx/ComfyUI_HuggingFace_Downloader"
     "https://github.com/hanjangma41/NEW-UTILSs.git"
-    "https://github.com/crystian/CRT-Nodes.git"
+    "https://github.com/plugcrypt/CRT-Nodes.git"
     "https://github.com/evanspearman/ComfyMath.git"
     "https://github.com/teskor-hub/comfyui-teskors-utils.git"
     "https://github.com/reasj2/comfyui-animator-nodes.git"
